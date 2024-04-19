@@ -4,19 +4,31 @@ size_t my_strlen(const char *str)
 {
     size_t len = 0;
     const char *cur = str;
-
-    __asm__(
-        ".intel_syntax noprefix\n"
-        "mov rcx, -1\n"
-        "mov al, 0\n"
-        "mov rdi, %1\n"
-        "repne scasb\n"
-        "neg rcx\n"
-        "sub rcx, 2\n"
-        "mov %0, rcx\n"
-        : "=r"(len)
-        : "r"(cur)
-        : "%rax", "%rcx", "%rdi", "%al");
-
+    /*
+    asm (
+         текст_вставки
+         список_выходных_параметров
+         список_входных_параметров
+         список_разрушаемых_регистров
+    )
+    обращение к операндам по номеру с префиксом %
+    нумерация начинается с 0, и идет непрерывно,
+    объединяя все элементы списков выходных и входных операндов
+    */
+    asm(
+        ".intel_syntax noprefix\n"  // синтаксис intel
+        "xor rax, rax\n"    // текущая длина
+        "mov rdi, %1\n"     // в rdi указатель на строку
+    "while:\n"
+        "inc rax\n"
+        // rdi+rax-1, -1 т.к. уже инкрементировали
+        "cmp byte ptr [rdi+rax-1], 0\n"  // сравниваем текущий символ с нулем
+        "jne while\n"
+        "dec rax\n"     // выкинуть '\0'
+        "mov %0, rax\n"     // длину строки в переменную len
+        : "=r" (len)        // возвращаемое значение
+        : "r" (cur)     // входной операнд
+        : "rax", "rdi"      // используемые регистры
+    );
     return len;
 }
