@@ -13,6 +13,7 @@ section .text
 ; dst src
 
 my_strncpy:
+    xor bl, 0   ; флаг для dst src
     mov rcx, rdx         ; в rcx количество символов для копирования
     cmp rsi, rdi         
     ; ==
@@ -22,7 +23,7 @@ my_strncpy:
 not_equal:
     cmp rsi, rdi
     ; >
-    jg simple_copy
+    jg greater
     ; <
     mov rax, rdi
     sub rax, rsi         ; rax число символов между rsi и rdi
@@ -43,11 +44,19 @@ simple_copy:
     rep movsb
     
     ; чтобы дописать '\0' в конец строки
-    lahf
-    test ah, 10h    ; (10h = 00010000b)
-    jz exit     ; DF == 0
-    mov rdi, 0 
+    cmp bl, 1
+    jne exit
+    mov byte [rdi], 0 
 
     cld     ; сбросить флаг направления строки (DF = 0)
 exit:
     ret
+
+greater:
+    mov rax, rdi
+    sub rax, rsi         ; rax число символов между rsi и rdi
+    cmp rax, rcx         ; достаточно места?
+    jge simple_copy      ; не перекрываются
+    
+    mov bl, 1            ; перекрываются
+    jmp simple_copy

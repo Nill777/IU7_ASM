@@ -7,12 +7,12 @@
 int main(void)
 {
     setbuf(stdout, NULL);
-    // char str_copy[7];    //dst src с перекрытием
+    char str_copy[5];    //dst src с перекрытием
     // char str_copy[STRLEN];   //dst src без перекрытия
     char str[STRLEN] = "My new string";
     // char str_copy[STRLEN];   //src dst без перекрытия
     // char *str_copy = str;    //src == dst
-    char *str_copy = &str[5];   //src dst с перекрытием
+    // char *str_copy = &str[5];   //src dst с перекрытием
     size_t len = my_strlen(str);
     
     printf("C length: %d\nASM length: %d\n", strlen(str), len);
