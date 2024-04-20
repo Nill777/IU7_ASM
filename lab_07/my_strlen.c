@@ -3,7 +3,6 @@
 size_t my_strlen(const char *str)
 {
     size_t len = 0;
-    const char *cur = str;
     /*
     asm (
          текст_вставки
@@ -24,10 +23,10 @@ size_t my_strlen(const char *str)
         // rdi+rax-1, -1 т.к. уже инкрементировали
         "cmp byte ptr [rdi+rax-1], 0\n"  // сравниваем текущий символ с нулем
         "jne while\n"
-        "dec rax\n"     // выкинуть '\0'
+        "dec rax\n"     // выкинуть длину '\0'
         "mov %0, rax\n"     // длину строки в переменную len
         : "=r" (len)        // возвращаемое значение
-        : "r" (cur)     // входной операнд
+        : "r" (str)     // входной операнд
         : "rax", "rdi"      // используемые регистры
     );
     return len;
