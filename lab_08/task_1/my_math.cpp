@@ -219,15 +219,4 @@ int main()
     double d2 = 5.6;
     cout << "\n DOUBLE:" << endl;
     time_measure(d1, d2);
-
-#ifndef SSE
-    long double ld1 = 2.3;
-    long double ld2 = 5.6;
-
-    cout << "\n __FLOAT80:" << endl;
-    time_measure<__float80>(ld1, ld2);
-
-    cout << "\n LONG DOUBLE:" << endl;
-    time_measure(ld1, ld2);
-#endif
 }
