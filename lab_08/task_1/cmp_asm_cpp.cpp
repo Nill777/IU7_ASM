@@ -3,95 +3,82 @@
 #include <cmath>
 
 using namespace std;
+#define ITERATIONS 1E4
 
-#define PRESION "%s %f %s %f = %g\n" 
-#define TIMES 1e6
-
-void cout_time(clock_t time, const char* action)
-{
-    if (time >= 1000)
-        cout << "   " << action << ": " << ((double)time) / CLOCKS_PER_SEC << " s.";
-    else
-        cout << "   " << action << ": " << ((double)time) << " ms.";
-    //cout << " " << action << ": " << time << "ns.";
+void cout_time(clock_t time, const char* action) {
+    printf("     %s: %7.lf ms", action, (double)time);
 }
 
-
-template <typename Type>
-void sum(Type a, Type b)
+template <typename T>
+void sum(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
         result = a + b;
         res_time += clock() - start_time;
     }
-
-
     cout_time(res_time, "Sum");
 }
 
-template <typename Type>
-void mul(Type a, Type b)
+template <typename T>
+void mul(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
         result = a * b;
         res_time += clock() - start_time;
     }
-
     cout_time(res_time, "Mul");
 }
 
-template <typename Type>
-void sub(Type a, Type b)
+template <typename T>
+void sub(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
         result = a - b;
         res_time += clock() - start_time;
     }
-
     cout_time(res_time, "Sub");
 }
 
-template <typename Type>
-void div(Type a, Type b)
+template <typename T>
+void div(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
         result = a / b;
         res_time += clock() - start_time;
     }
-
     cout_time(res_time, "Div");
 }
-#ifdef ASM
-template <typename Type>
-Type sum_asm(Type a, Type b)
+
+template <typename T>
+T sum_asm(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
-        __asm__(
+        asm(
             "fld %1\n"
             "fld %2\n"
             "faddp %%ST(1), %%ST(0)\n"
@@ -102,22 +89,21 @@ Type sum_asm(Type a, Type b)
         );
         res_time += clock() - start_time;
     }
-
     cout_time(res_time, "Sum");
 
     return result;
 }
 
-template <typename Type>
-Type mul_asm(Type a, Type b)
+template <typename T>
+T mul_asm(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
-        __asm__
+        asm
         (
             "fld %1\n"
             "fld %2\n"
@@ -129,22 +115,21 @@ Type mul_asm(Type a, Type b)
         );
         res_time += clock() - start_time;
     }
-
     cout_time(res_time, "Mul");
 
     return result;
 }
 
-template <typename Type>
-Type sub_asm(Type a, Type b)
+template <typename T>
+T sub_asm(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
-        __asm__
+        asm
         (
             "fld %1\n"
             "fld %2\n"
@@ -156,23 +141,21 @@ Type sub_asm(Type a, Type b)
         );
         res_time += clock() - start_time;
     }
-
     cout_time(res_time, "Sub");
 
     return result;
 }
 
-template <typename Type>
-Type div_asm(Type a, Type b)
+template <typename T>
+T div_asm(T a, T b)
 {
-    Type result = 0;
+    T result = 0;
     clock_t start_time, res_time = 0;
 
-    for (int i = 0; i < TIMES; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         start_time = clock();
-        __asm__
-        (
+        asm(
             "fld %1\n"
             "fld %2\n"
             "fdivp %%ST(1), %%ST(0)\n"
@@ -183,40 +166,38 @@ Type div_asm(Type a, Type b)
         );
         res_time += clock() - start_time;
     }
-
     cout_time(res_time, "Div");
 
     return result;
 }
-#endif
 
-template <typename Type>
-void time_measure(Type a, Type b)
+template <typename T>
+void table_time(T a, T b)
 {
-#ifdef ASM
-    cout << "   ASM:";
+    cout << "ASM:";
     sum_asm(a, b);
     mul_asm(a, b);
     sub_asm(a, b);
     div_asm(a, b);
-#else
-    cout << "   CPP:";
+    cout << endl;
+
+    cout << "CPP:";
     sum(a, b);
     mul(a, b);
     sub(a, b);
     div(a, b);
-#endif
+    cout << endl;
 }
 
 int main()
 {
     float f1 = 1.1f;
     float f2 = 2.3f;
-    cout << " FLOAT:" << endl;
-    time_measure(f1, f2);
+    cout << "-----FLOAT-----" << endl;
+    table_time(f1, f2);
 
     double d1 = 2.3;
     double d2 = 5.6;
-    cout << "\n DOUBLE:" << endl;
-    time_measure(d1, d2);
+    cout << "-----DOUBLE-----" << endl;
+    table_time(d1, d2);
 }

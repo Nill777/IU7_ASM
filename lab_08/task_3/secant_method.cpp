@@ -10,7 +10,7 @@ double func(double x) {
         "fmul %1\n"          // x^2
         "fmul %1\n"          // x^3
         "fld %2\n"           // 7
-        "faddp %%st(1), %%st(0)\n" // x^3 + 7
+        "faddp %%st(1), %%st(0)\n" // x^3 + 7 (сложение с извлечением из стека)
         "fcos\n"      
         "fstp %0\n"       
         : "=m"(res)  
