@@ -1,50 +1,17 @@
 #include <QImage>
 #include <QColor>
 #include <iostream>
-// #include <emmintrin.h>  // для SSE
 #include <smmintrin.h>  // для SSE
 #include "brightness.h"
 #include "select_func.h"
 
-// #define SUM_CPP "sum cpp"
-// #define SUM_ASM "sum asm"
-
-// void form_data()
-// void cout_time(clock_t time, int flag_func) {
-//     char action[10] = "sum";
-//     // switch (flag_func) {
-//     // case INCREASE_CPP:
-//     //     char action[8] = "sum cpp";
-//     //     break;
-//     // case INCREASE_ASM:
-//     //     char action[8] = "sum asm";
-//     //     break;
-//     // case REDUCE_CPP:
-
-//     //     break;
-//     // case REDUCE_ASM:
-
-//     //     break;
-//     // }
-//     printf("%s: %7.lf ms\n", action, (double)time);
-// }
-
 void increase_cpp(int& red, int& green, int& blue, int brightness) {
-    // clock_t start_time, res_time = 0;
-    // start_time = clock();
-
     red = std::min(255, red + brightness);
     green = std::min(255, green + brightness);
     blue = std::min(255, blue + brightness);
-
-    // res_time += clock() - start_time;
-    // return res_time;
 }
 
 void increase_asm(int& red, int& green, int& blue, int brightness) {
-    // clock_t start_time, res_time = 0;
-    // start_time = clock();
-
     brightness = std::min(brightness, 255);
 
     // загрузка исходных значений и яркости в 128 битные регистры SSE
@@ -71,9 +38,6 @@ void increase_asm(int& red, int& green, int& blue, int brightness) {
     red = _mm_extract_epi32(result, 0); // извлечение r
     green = _mm_extract_epi32(result, 1); // извлечение g
     blue = _mm_extract_epi32(result, 2); // извлечение b
-
-    // res_time += clock() - start_time;
-    // return res_time;
 }
 
 void reduce_cpp(int& red, int& green, int& blue, int brightness) {
@@ -146,7 +110,5 @@ QPixmap change_brightness(const QPixmap& pixmap, int brightness, int flag_func, 
     }
 
     time += clock() - start_time;
-
-    // cout_time(res_time, flag_func);
     return QPixmap::fromImage(img);
 }
