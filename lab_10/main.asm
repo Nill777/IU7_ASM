@@ -29,9 +29,31 @@ extern gtk_button_new_with_label
 extern gtk_label_new
 extern gtk_box_pack_end
 
+extern gtk_entry_get_text
+extern strtod
+extern strtoull
+extern printf
+extern write
+extern sprintf
+; Сетка
 extern gtk_grid_new
 extern gtk_grid_attach
+extern gtk_label_set_text
+extern gtk_widget_set_hexpand
+extern gtk_widget_set_vexpand
+; Диалоговое окно
+extern gtk_message_dialog_new
+extern gtk_message_dialog_format_secondary_text
+extern gtk_dialog_add_button
+extern gtk_widget_show
+extern gtk_dialog_run
+extern gtk_window_present
+extern gtk_widget_destroy
+; Мои функции
+extern secant_method
+extern printf
 
+global result
 section .bss
     window: resq 1
     vbox: resq 1
@@ -46,12 +68,23 @@ section .bss
     entry_iter: resq 1
 
     button: resq 1
-    label_x0_utf8: resq 1
-    label_x1_utf8: resq 1
-    label_iter_utf8: resq 1
+    dialog: resq 1
+
+    x_0: resq 1
+    x_1: resq 1
+    iter: resq 1
+    ; result: resq 1
+    ptr_result: resq 1
+    success: resb 1
+
+section .data
+    ; ptr_result dq result 
+    result: dq 0
 section .rodata
     signal:
-    .destroy:   db "destroy", 0
+        .destroy:   db "destroy", 0
+        .clicked:   db "clicked", 0
+
     title:      db "Lab_10", 0
 
     text_label_x0: db "x_0: ", 0
@@ -59,10 +92,217 @@ section .rodata
     text_label_iter: db "iter: ", 0
 
     button_label: db "Вычислить корень", 0
+    success_message: db "Результат: %.5f", 0
+    failure_message: db "Не удалось найти корень за %.0f итераций", 0
+    ok_button_text: db "ok", 0
+
+    ; x_0: dq 0
+    ; x_1: dq 0
+    ; iter: dq 0
+    eps: dq 0.00001
+    const_100: dq 0x4059000000000000  ; 100.0 в формате IEEE 754
+    ; result: dq 0
+    ; success: db 0
+
+    ; format_double: db "%f", 10, 0
+    ; format_int: db "%d", 10, 0
+
+section .equ
+    GTK_BUTTONS_OK equ 1
 
 section .text
     _destroy_window:
         jmp gtk_main_quit
+        
+    _button_clicked:
+        ; x_0
+        mov rdi, [rel entry_x0]
+        call gtk_entry_get_text
+        
+        mov rdi, rax    ; Загрузить строку в rdi
+        xor rsi, rsi    ; Установить endptr в 0 (не используется)
+        call strtod
+        movsd [rel x_0], xmm0 ; Переместить результат в x_0
+        ; x_1
+        mov rdi, [rel entry_x1]
+        call gtk_entry_get_text
+        
+        mov rdi, rax    ; Загрузить строку в rdi
+        xor rsi, rsi    ; Установить endptr в 0 (не используется)
+        call strtod
+        movsd [rel x_1], xmm0 ; Переместить результат в x_1
+        ; iter
+        mov rdi, [rel entry_iter]
+        call gtk_entry_get_text
+        
+        mov rdi, rax    ; Загрузить строку в rdi
+        xor rsi, rsi    ; Установить endptr в 0 (не используется)
+        call strtod
+        movsd [rel iter], xmm0 ; Переместить результат в x_1
+
+
+        ; mov rdi, [rel entry_iter]
+        ; call gtk_entry_get_text
+        
+        ; mov rdi, rax    ; Загрузить строку в rdi
+        ; xor rsi, rsi    ; Установить endptr в 0 (не используется)
+        ; mov rdx, 10     ; Установить base (основание системы счисления) в 10
+        ; call strtoull
+        ; mov [rel iter], rax ; Переместить результат в iter
+
+        ; Подготовить аргументы для вызова secant_method
+        ; lea rdi, [rel result] ; Адрес для x2
+        ; movsd xmm0, [rel x_0]       ; x0
+        ; movsd xmm1, [rel x_1]       ; x1
+        ; movsd xmm2, [rel eps]       ; eps
+        ; mov r10, [rel iter]         ; max_iter
+
+        ; Подготовить аргументы для вызова secant_method
+        ; lea rdi, [rel result] ; Адрес для x2
+        ; movsd xmm0, [rel x_0]       ; x0
+        ; movsd xmm1, [rel x_1]       ; x1
+        ; movsd xmm2, [rel eps]       ; eps
+        ; mov rsi, [rel iter]         ; max_iter
+
+        ; Подготовить аргументы для вызова secant_method
+        ; movsd xmm3, [rel iter]       ; eps
+        ; movq rax, xmm3
+        ; push rax
+        ; push rax
+
+
+        movsd xmm3, [rel iter]         ; max_iter
+        movq rax, xmm3
+        push rax
+        movsd xmm2, [rel eps]       ; eps
+        movq rax, xmm2
+        push rax
+        movsd xmm1, [rel x_1]       ; x1
+        movq rax, xmm1
+        push rax
+        movsd xmm0, [rel x_0]       ; x0
+        movq rax, xmm0
+        push rax
+        mov rax, [rel ptr_result]
+        ; mov rax, ptr_result
+        ; lea rax, [result]
+        ; lea rax, [rel ptr_result]
+        ; mov rax, result      ; Адрес для x2
+        push rax
+
+        ; Вызвать secant_method
+        call secant_method
+        add rsp, 0x28
+
+        ; mov rdi, rbx
+        ; mov rdi, success_message     ; Строка форматирования
+        ;     ; mov rdx, [rel result]
+        ; movq xmm0, [rel result]
+        ; mov rax, 1
+        ; call printf
+        ; add rsp, 0x28              ; Восстановить стек после вызова функции
+
+        ; movsd xmm0, [rel iter]
+        ; movsd [rel result], xmm0
+
+        ; Вызвать secant_method
+        ; call secant_method
+
+        ; Сохранить возвращаемое значение (bool)
+        mov [rel success], al
+        ; Вызов функции show_result_dialog
+        call show_result_dialog
+
+        ret
+
+    ; show_result_dialog:
+    ;     ; Создание диалогового окна
+    ;     mov rdi, 0                  ; parent window (NULL)
+    ;     mov rsi, 0                  ; flags (GTK_DIALOG_DESTROY_WITH_PARENT)
+    ;     mov rdx, 0                  ; message_type (GTK_MESSAGE_INFO)
+    ;     mov rcx, 1                  ; buttons (GTK_BUTTONS_OK)
+    ;     mov r8, 0                   ; message_format (NULL)
+    ;     call gtk_message_dialog_new
+    ;     mov rbx, rax
+
+    ;     ; Отображение диалогового окна
+    ;     mov rdi, rbx
+    ;     call gtk_window_present
+    ;     ret
+; section .data
+;     dialog_message db 'Результат: %g', 0
+
+    show_result_dialog:
+        ; Создание диалогового окна
+        mov rdi, 0                  ; parent window (NULL)
+        mov rsi, 0                  ; flags (GTK_DIALOG_DESTROY_WITH_PARENT)
+        mov rdx, 0                  ; message_type (GTK_MESSAGE_INFO)
+        mov rcx, 1                  ; buttons (GTK_BUTTONS_OK)
+        mov r8, 0                   ; message_format (NULL)
+        call gtk_message_dialog_new
+        mov rbx, rax
+
+        ; ; Установка текста диалогового окна
+        ; mov rdi, rbx
+        ; mov rsi, dialog_message     ; Строка форматирования
+        ; movsd xmm0, [rel result]    ; Значение result
+        ; call gtk_message_dialog_format_secondary_text
+
+        ; Проверка значения success
+        cmp byte [rel success], 1
+        je success_msg          ; Если success == 1, перейти к success_message
+        ; Иначе вывести другое сообщение
+        mov rdi, rbx
+        mov rsi, failure_message
+        ; movsd [rel iter], 100
+        movsd xmm0, [rel iter]    ; Значение result
+        call gtk_message_dialog_format_secondary_text
+        jmp failure_msg
+
+        success_msg:
+        ; mov rax, 1
+        mov rdi, rbx
+        mov rsi, success_message     ; Строка форматирования
+        ; mov rdx, [rel result]
+        movsd xmm0, [rel result]   ; Значение result
+        ; movsd xmm0, [rel const_100]
+        call gtk_message_dialog_format_secondary_text
+        failure_msg:
+
+        ; Отображение диалогового окна
+        mov rdi, rbx
+        call gtk_window_present
+
+        ; Ждать закрытия диалогового окна
+        mov rdi, rbx
+        call gtk_dialog_run
+        mov rdi, rbx
+        call gtk_widget_destroy
+
+        ret
+
+
+    ; show_result_dialog:
+    ;     ; Создать диалоговое окно
+    ;     mov rdi, [rel window]           ; Родительское окно
+    ;     mov rsi, [rel dialog_message]   ; Строка форматирования
+    ;     movsd xmm0, [rel result]        ; Значение result
+    ;     mov al, 1                       ; Отобразить кнопку OK
+    ;     call gtk_message_dialog_new
+
+    ;     ; Отобразить диалоговое окно
+    ;     call gtk_widget_show
+
+    ;     ; Ждать закрытия диалога
+    ;     .wait_loop:
+    ;         call gtk_dialog_run
+    ;         cmp rax, GTK_RESPONSE_OK
+    ;         je .wait_loop
+
+    ;     ; Уничтожить диалоговое окно
+    ;     call gtk_widget_destroy
+
+    ;     ret
 
     main:
         push rbp
@@ -70,6 +310,9 @@ section .text
         xor rdi, rdi
         xor rsi, rsi
         call gtk_init
+
+        movq xmm0, [result]
+        movq [ptr_result], xmm0
 
         xor rdi, rdi
         call gtk_window_new
@@ -86,19 +329,7 @@ section .text
         mov rdi, qword [rel window]
         mov rsi, GTK_WIN_POS_CENTER
         call gtk_window_set_position
-
-
-        ; ; Create a vertical box
-        ; mov edi, 0x2
-        ; xor rdi, rdi
-        ; call gtk_box_new
-        ; mov qword [rel vbox], rax ;rel - адрес vbox будет вычислен относительно текущего положения инструкции
-
-        ; ; Attach the box to the window
-        ; mov rdi, [window]
-        ; mov rsi, [vbox]
-        ; call gtk_container_add
-        
+        ; --------------------------------------------        
 
         ; Создание вертикального контейнера
         mov rdi, GTK_ORIENTATION_VERTICAL
@@ -107,182 +338,151 @@ section .text
 
 
         ; Создание grid
+        mov rdi, 3  ; n_rows
+        mov rsi, 2  ; n_columns
         call gtk_grid_new
         mov qword [rel grid], rax
 
-        ; ; Добавление элементов в grid
-        ; ; Строка 1
-        ; mov rdi, text_label_x0
-        ; call gtk_label_new
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, rax
-        ; mov rdx, 0  ; row
-        ; mov rcx, 0  ; column
-        ; call gtk_grid_attach
+        mov rdi, qword[rel grid]
+        mov rsi, 1  ; TRUE (заполнить по горизонтали)
+        call gtk_widget_set_vexpand
 
         ; Добавление элементов в grid
         ; Строка 1
-        mov rdi, text_label_x0
         call gtk_label_new
         mov qword [rel lable_x0], rax  ; Сохраняем адрес label в переменной
+
+        mov rdi, qword[rel lable_x0]
+        mov rsi, 1  ; TRUE (заполнить по горизонтали)
+        call gtk_widget_set_hexpand
+
+        mov rdi, qword[rel lable_x0]
+        mov rsi, text_label_x0
+        call gtk_label_set_text
+
         mov rdi, qword [rel grid]
         mov rsi, qword [rel lable_x0]  ; Используем сохраненный адрес
-        mov rdx, 0  ; row
-        mov rcx, 0  ; column
+        mov rdx, 0  ; column
+        mov rcx, 0  ; row
+        mov r8, 1       ; r8 = width (ширина в колонках)
+        mov r9, 1       ; r9 = height (высота в строках)
         call gtk_grid_attach
 
-        ; ; Строка 1
-        ; mov rdi, text_label_x0
-        ; mov rsi, -1
-        ; mov rdx, 0
-        ; call g_convert_to_instance
-        ; mov qword [rel label_x0_utf8], rax
-        ; mov rdi, rax
-        ; call gtk_label_new
-        ; mov qword [rel lable_x0], rax
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, qword [rel lable_x0]
-        ; mov rdx, 0  ; row
-        ; mov rcx, 0  ; column
-        ; call gtk_grid_attach
 
-        ; mov rdi, entry_x0
         call gtk_entry_new
         mov qword [rel entry_x0], rax  ; Сохраняем адрес label в переменной
+
+        mov rdi, qword[rel entry_x0]
+        mov rsi, 1  ; TRUE (заполнить по горизонтали)
+        call gtk_widget_set_hexpand
+        
         mov rdi, qword [rel grid]
         mov rsi, qword [rel entry_x0]  ; Используем сохраненный адрес
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, rax
-        mov rdx, 0  ; row
-        mov rcx, 1  ; column
+        mov rdx, 1  ; column
+        mov rcx, 0  ; row
+        mov r8, 1       ; r8 = width (ширина в колонках)
+        mov r9, 1       ; r9 = height (высота в строках)
         call gtk_grid_attach
 
-        ; ; Строка 2
-        ; mov rdi, text_label_x1
-        ; call gtk_label_new
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, rax
-        ; mov rdx, 1  ; row
-        ; mov rcx, 0  ; column
-        ; call gtk_grid_attach
+        ; Строка 2
+        call gtk_label_new
+        mov qword [rel lable_x1], rax  ; Сохраняем адрес label в переменной
 
-        ; ; mov rdi, entry_x1
-        ; call gtk_entry_new
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, rax
-        ; mov rdx, 1  ; row
-        ; mov rcx, 1  ; column
-        ; call gtk_grid_attach
+        mov rdi, qword[rel lable_x1]
+        mov rsi, 1  ; TRUE (заполнить по горизонтали)
+        call gtk_widget_set_hexpand
 
-        ; ; Строка 3
-        ; mov rdi, text_label_iter
-        ; call gtk_label_new
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, rax
-        ; mov rdx, 2  ; row
-        ; mov rcx, 0  ; column
-        ; call gtk_grid_attach
+        mov rdi, qword[rel lable_x1]
+        mov rsi, text_label_x1
+        call gtk_label_set_text
 
-        ; ; mov rdi, entry_iter
-        ; call gtk_entry_new
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, rax
-        ; mov rdx, 2  ; row
-        ; mov rcx, 1  ; column
-        ; call gtk_grid_attach
+        mov rdi, qword [rel grid]
+        mov rsi, qword [rel lable_x1]  ; Используем сохраненный адрес
+        mov rdx, 0  ; column
+        mov rcx, 1  ; row
+        mov r8, 1       ; r8 = width (ширина в колонках)
+        mov r9, 1       ; r9 = height (высота в строках)
+        call gtk_grid_attach
+
+
+        call gtk_entry_new
+        mov qword [rel entry_x1], rax  ; Сохраняем адрес label в переменной
+
+        mov rdi, qword[rel entry_x1]
+        mov rsi, 1  ; TRUE (заполнить по горизонтали)
+        call gtk_widget_set_hexpand
+
+        mov rdi, qword [rel grid]
+        mov rsi, qword [rel entry_x1]  ; Используем сохраненный адрес
+        mov rdx, 1  ; column
+        mov rcx, 1  ; row
+        mov r8, 1       ; r8 = width (ширина в колонках)
+        mov r9, 1       ; r9 = height (высота в строках)
+        call gtk_grid_attach
+
+        ; Строка 3
+        call gtk_label_new
+        mov qword [rel lable_iter], rax  ; Сохраняем адрес label в переменной
+
+        mov rdi, qword[rel lable_iter]
+        mov rsi, 1  ; TRUE (заполнить по горизонтали)
+        call gtk_widget_set_hexpand
+
+        mov rdi, qword[rel lable_iter]
+        mov rsi, text_label_iter
+        call gtk_label_set_text
+        
+        mov rdi, qword [rel grid]
+        mov rsi, qword [rel lable_iter]  ; Используем сохраненный адрес
+        mov rdx, 0  ; column
+        mov rcx, 2  ; row
+        mov r8, 1       ; r8 = width (ширина в колонках)
+        mov r9, 1       ; r9 = height (высота в строках)
+        call gtk_grid_attach
+
+
+        call gtk_entry_new
+        mov qword [rel entry_iter], rax  ; Сохраняем адрес label в переменной
+
+        mov rdi, qword[rel entry_iter]
+        mov rsi, 1  ; TRUE (заполнить по горизонтали)
+        call gtk_widget_set_hexpand
+
+        mov rdi, qword [rel grid]
+        mov rsi, qword [rel entry_iter]  ; Используем сохраненный адрес
+        mov rdx, 1  ; column
+        mov rcx, 2  ; row
+        mov r8, 1       ; r8 = width (ширина в колонках)
+        mov r9, 1       ; r9 = height (высота в строках)
+        call gtk_grid_attach
 
         ; Добавление grid в вертикальный контейнер
         mov rdi, qword [rel vbox]
         mov rsi, qword [rel grid]
         call gtk_container_add
 
-        ; ; Сетка (grid)
-        ; mov rdi, grid
-        ; call gtk_grid_new
-        ; mov qword [rel grid], rax
-        ; mov rdi, rax
-        ; mov rsi, 2
-        ; mov rdx, 2
-        ; call gtk_grid_set_row_spacing
-        ; call gtk_grid_set_column_spacing
-        ; mov rdi, qword [rel main_box]
-        ; mov rsi, rax
-        ; call gtk_container_add
-
-        ; ; Add label to grid
-        ; mov rdi, label_x0
-        ; call gtk_label_new
-        ; mov rdi, qword [rel grid]
-        ; mov rsi, rax
-        ; mov rdx, 0
-        ; mov rcx, 0
-        ; mov r8d, 1
-        ; mov r9d, 1
-        ; call gtk_grid_attach
-
-
         ; Создание кнопки
         mov rdi, button_label
         call gtk_button_new_with_label
         mov qword [rel button], rax  ; Сохраняем адрес label в переменной
+
+        ; Подключение сигнала "clicked" к функции _button_clicked
+        mov rdi, qword [rel button]
+        mov rsi, signal.clicked
+        mov rdx, _button_clicked
+        mov rcx, 0
+        call g_signal_connect_data
+
         mov rdi, qword [rel vbox]
         mov rsi, qword [rel button]  ; Используем сохраненный адрес
-        ; mov rdi, qword [rel vbox]
-        ; mov rsi, rax
         call gtk_container_add
 
         ; Добавление вертикального контейнера в окно
         mov rdi, qword [rel window]
         mov rsi, qword [rel vbox]
         call gtk_container_add
-        ; ; Create and add the first entry
-        ; xor rdi, rdi
-        ; call gtk_entry_new
-        ; mov qword [rel entry1], rax
-        ; mov rdi, rax
-        ; mov rsi, entry1_label
-        ; call gtk_entry_set_text
-        ; mov rdi, qword [rel vbox]
-        ; mov rsi, rax
-        ; call gtk_box_pack_start
 
-        ; ; Create and add the second entry
-        ; xor rdi, rdi
-        ; call gtk_entry_new
-        ; mov qword [rel entry2], rax
-        ; mov rdi, rax
-        ; mov rsi, entry2_label
-        ; call gtk_entry_set_text
-        ; mov rdi, qword [rel vbox]
-        ; mov rsi, rax
-        ; call gtk_box_pack_start
-
-        ; ; Create and add the label
-        ; xor rdi, rdi
-        ; call gtk_label_new
-        ; mov qword [rel label], rax
-        ; mov rdi, rax
-        ; mov rsi, label_text
-        ; call g_object_set
-
-        ; mov rdi, qword [rel vbox]
-        ; mov rsi, rax
-        ; call gtk_box_pack_start
-
-        ; ; Create and add the button
-        ; xor rdi, rdi
-        ; mov rsi, button_label
-        ; call gtk_button_new_with_label
-        ; mov qword [rel button], rax
-        ; mov rdi, qword [rel vbox]
-        ; mov rsi, rax
-        ; call gtk_box_pack_end
-
-        ; mov rdi, qword [rel window]
-        ; mov rsi, qword [rel vbox]
-        ; call gtk_container_add
-
-
+        ; --------------------------------------------
         mov rdi, qword [rel window]
         mov rsi, signal.destroy
         mov rdx, _destroy_window
@@ -294,4 +494,6 @@ section .text
         mov rdi, qword [rel window]
         call gtk_widget_show_all
         call gtk_main
+
+        pop rbp
         ret
