@@ -10,7 +10,6 @@ global main
 extern exit
 extern gtk_init
 extern gtk_main
-extern g_object_set
 extern gtk_main_quit
 extern gtk_window_new
 extern gtk_widget_show_all
@@ -18,23 +17,15 @@ extern g_signal_connect
 extern gtk_window_set_title
 extern g_signal_connect_data
 extern gtk_window_set_position
-extern gtk_settings_get_default
 extern gtk_window_set_default_size
 extern gtk_box_new
 extern gtk_entry_new
-extern gtk_box_pack_start
-extern gtk_entry_set_text
 extern gtk_container_add
 extern gtk_button_new_with_label
 extern gtk_label_new
-extern gtk_box_pack_end
 
 extern gtk_entry_get_text
 extern strtod
-extern strtoull
-extern printf
-extern write
-extern sprintf
 ; Сетка
 extern gtk_grid_new
 extern gtk_grid_attach
@@ -44,14 +35,12 @@ extern gtk_widget_set_vexpand
 ; Диалоговое окно
 extern gtk_message_dialog_new
 extern gtk_message_dialog_format_secondary_text
-extern gtk_dialog_add_button
 extern gtk_widget_show
 extern gtk_dialog_run
 extern gtk_window_present
 extern gtk_widget_destroy
 ; Мои функции
 extern secant_method
-extern printf
 
 global result
 section .bss
@@ -73,12 +62,10 @@ section .bss
     x_0: resq 1
     x_1: resq 1
     iter: resq 1
-    ; result: resq 1
     ptr_result: resq 1
     success: resb 1
 
 section .data
-    ; ptr_result dq result 
     result: dq 0
 section .rodata
     signal:
@@ -96,16 +83,7 @@ section .rodata
     failure_message: db "Не удалось найти корень за %.0f итераций", 0
     ok_button_text: db "ok", 0
 
-    ; x_0: dq 0
-    ; x_1: dq 0
-    ; iter: dq 0
     eps: dq 0.00001
-    const_100: dq 0x4059000000000000  ; 100.0 в формате IEEE 754
-    ; result: dq 0
-    ; success: db 0
-
-    ; format_double: db "%f", 10, 0
-    ; format_int: db "%d", 10, 0
 
 section .equ
     GTK_BUTTONS_OK equ 1
@@ -140,37 +118,6 @@ section .text
         call strtod
         movsd [rel iter], xmm0 ; Переместить результат в x_1
 
-
-        ; mov rdi, [rel entry_iter]
-        ; call gtk_entry_get_text
-        
-        ; mov rdi, rax    ; Загрузить строку в rdi
-        ; xor rsi, rsi    ; Установить endptr в 0 (не используется)
-        ; mov rdx, 10     ; Установить base (основание системы счисления) в 10
-        ; call strtoull
-        ; mov [rel iter], rax ; Переместить результат в iter
-
-        ; Подготовить аргументы для вызова secant_method
-        ; lea rdi, [rel result] ; Адрес для x2
-        ; movsd xmm0, [rel x_0]       ; x0
-        ; movsd xmm1, [rel x_1]       ; x1
-        ; movsd xmm2, [rel eps]       ; eps
-        ; mov r10, [rel iter]         ; max_iter
-
-        ; Подготовить аргументы для вызова secant_method
-        ; lea rdi, [rel result] ; Адрес для x2
-        ; movsd xmm0, [rel x_0]       ; x0
-        ; movsd xmm1, [rel x_1]       ; x1
-        ; movsd xmm2, [rel eps]       ; eps
-        ; mov rsi, [rel iter]         ; max_iter
-
-        ; Подготовить аргументы для вызова secant_method
-        ; movsd xmm3, [rel iter]       ; eps
-        ; movq rax, xmm3
-        ; push rax
-        ; push rax
-
-
         movsd xmm3, [rel iter]         ; max_iter
         movq rax, xmm3
         push rax
@@ -184,53 +131,17 @@ section .text
         movq rax, xmm0
         push rax
         mov rax, [rel ptr_result]
-        ; mov rax, ptr_result
-        ; lea rax, [result]
-        ; lea rax, [rel ptr_result]
-        ; mov rax, result      ; Адрес для x2
         push rax
 
         ; Вызвать secant_method
         call secant_method
         add rsp, 0x28
 
-        ; mov rdi, rbx
-        ; mov rdi, success_message     ; Строка форматирования
-        ;     ; mov rdx, [rel result]
-        ; movq xmm0, [rel result]
-        ; mov rax, 1
-        ; call printf
-        ; add rsp, 0x28              ; Восстановить стек после вызова функции
-
-        ; movsd xmm0, [rel iter]
-        ; movsd [rel result], xmm0
-
-        ; Вызвать secant_method
-        ; call secant_method
-
         ; Сохранить возвращаемое значение (bool)
         mov [rel success], al
         ; Вызов функции show_result_dialog
         call show_result_dialog
-
         ret
-
-    ; show_result_dialog:
-    ;     ; Создание диалогового окна
-    ;     mov rdi, 0                  ; parent window (NULL)
-    ;     mov rsi, 0                  ; flags (GTK_DIALOG_DESTROY_WITH_PARENT)
-    ;     mov rdx, 0                  ; message_type (GTK_MESSAGE_INFO)
-    ;     mov rcx, 1                  ; buttons (GTK_BUTTONS_OK)
-    ;     mov r8, 0                   ; message_format (NULL)
-    ;     call gtk_message_dialog_new
-    ;     mov rbx, rax
-
-    ;     ; Отображение диалогового окна
-    ;     mov rdi, rbx
-    ;     call gtk_window_present
-    ;     ret
-; section .data
-;     dialog_message db 'Результат: %g', 0
 
     show_result_dialog:
         ; Создание диалогового окна
@@ -241,12 +152,6 @@ section .text
         mov r8, 0                   ; message_format (NULL)
         call gtk_message_dialog_new
         mov rbx, rax
-
-        ; ; Установка текста диалогового окна
-        ; mov rdi, rbx
-        ; mov rsi, dialog_message     ; Строка форматирования
-        ; movsd xmm0, [rel result]    ; Значение result
-        ; call gtk_message_dialog_format_secondary_text
 
         ; Проверка значения success
         cmp byte [rel success], 1
@@ -260,12 +165,9 @@ section .text
         jmp failure_msg
 
         success_msg:
-        ; mov rax, 1
         mov rdi, rbx
         mov rsi, success_message     ; Строка форматирования
-        ; mov rdx, [rel result]
         movsd xmm0, [rel result]   ; Значение result
-        ; movsd xmm0, [rel const_100]
         call gtk_message_dialog_format_secondary_text
         failure_msg:
 
@@ -280,29 +182,6 @@ section .text
         call gtk_widget_destroy
 
         ret
-
-
-    ; show_result_dialog:
-    ;     ; Создать диалоговое окно
-    ;     mov rdi, [rel window]           ; Родительское окно
-    ;     mov rsi, [rel dialog_message]   ; Строка форматирования
-    ;     movsd xmm0, [rel result]        ; Значение result
-    ;     mov al, 1                       ; Отобразить кнопку OK
-    ;     call gtk_message_dialog_new
-
-    ;     ; Отобразить диалоговое окно
-    ;     call gtk_widget_show
-
-    ;     ; Ждать закрытия диалога
-    ;     .wait_loop:
-    ;         call gtk_dialog_run
-    ;         cmp rax, GTK_RESPONSE_OK
-    ;         je .wait_loop
-
-    ;     ; Уничтожить диалоговое окно
-    ;     call gtk_widget_destroy
-
-    ;     ret
 
     main:
         push rbp
