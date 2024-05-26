@@ -7,7 +7,7 @@
 использованием GTK или других компиляторов и библиотек.
 
 ## Важное!!!
-Через при запуске через терминал VSCode может выдавать ошибку:  
+При запуске через встроенный терминал VSCode может выдавать ошибку:  
 
 ./app.exe: symbol lookup error: /snap/core20/current/lib/x86_64-linux-gnu/libpthread.so.0: undefined symbol: __libc_pthread_init, version GLIBC_PRIVATE
 
